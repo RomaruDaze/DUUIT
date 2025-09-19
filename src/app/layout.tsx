@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import InstallPrompt from '@/components/InstallPrompt';
+import InstallPrompt from "@/components/InstallPrompt";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -46,16 +46,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="DUIT" />
         <link rel="apple-touch-icon" href="/icon-192x192.ico" />
-        
+
         {/* Better PWA support */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="application-name" content="DUIT" />
         <meta name="msapplication-TileColor" content="#000000" />
         <meta name="msapplication-tap-highlight" content="no" />
-        
+
         {/* iOS specific */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
         <meta name="apple-mobile-web-app-title" content="DUIT" />
         <link rel="apple-touch-startup-image" href="/icon-512x512.ico" />
       </head>
