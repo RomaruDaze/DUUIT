@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DUIT - Just Do It",
   description: "Just Do It - Stay organized and productive",
-  manifest: "/manifest", // Changed from '/manifest.json' to '/manifest'
+  manifest: "/app-manifest.json", // Changed to use static file
   themeColor: "#000000",
   viewport:
     "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
@@ -39,7 +39,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="manifest" href="/manifest" />
+        <link rel="manifest" href="/app-manifest.json" />
         <meta name="theme-color" content="#000000" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
