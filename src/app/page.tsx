@@ -16,6 +16,7 @@ import {
 import { Trash2, Edit, Plus, Filter, CheckCircle, Circle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import InstallPrompt from '@/components/InstallPrompt';
 
 interface Todo {
   id: string;
@@ -437,6 +438,7 @@ export default function TodoList() {
           </Button>
         )}
       </div>
+      <InstallPrompt />
     </div>
   );
 }
