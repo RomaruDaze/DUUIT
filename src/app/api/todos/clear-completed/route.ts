@@ -1,24 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextResponse } from 'next/server';
+
+// Mock data - in a real app, this would be in a database
+let todos = [
+  { 
+    id: '1', 
+    text: 'Welcome to DUIT!', 
+    completed: false, 
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
 
 export async function POST() {
   try {
-    // Delete all completed todos
-    const result = await db.todo.deleteMany({
-      where: {
-        completed: true,
-      },
-    });
-
-    return NextResponse.json({ 
-      message: "Completed todos cleared successfully",
-      count: result.count 
-    });
+    todos = todos.filter(todo => !todo.completed);
+    return NextResponse.json({ success: true, count: todos.length });
   } catch (error) {
-    console.error("Error clearing completed todos:", error);
-    return NextResponse.json(
-      { error: "Failed to clear completed todos" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to clear completed todos' }, { status: 500 });
   }
 }

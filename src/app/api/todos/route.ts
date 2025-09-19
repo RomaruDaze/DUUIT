@@ -1,45 +1,33 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextResponse } from "next/server";
+
+// Mock data for testing - this will work without database
+let todos = [
+  {
+    id: "1",
+    text: "Welcome to DUIT!",
+    completed: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
 export async function GET() {
-  try {
-    const todos = await db.todo.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-
-    return NextResponse.json(todos);
-  } catch (error) {
-    console.error("Error fetching todos:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch todos" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(todos);
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
     const { text } = await request.json();
-
-    if (!text || typeof text !== "string" || text.trim() === "") {
-      return NextResponse.json(
-        { error: "Text is required and must be a non-empty string" },
-        { status: 400 }
-      );
-    }
-
-    const todo = await db.todo.create({
-      data: {
-        text: text.trim(),
-        completed: false,
-      },
-    });
-
-    return NextResponse.json(todo, { status: 201 });
+    const newTodo = {
+      id: Date.now().toString(),
+      text: text || "New todo",
+      completed: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    todos.push(newTodo);
+    return NextResponse.json(newTodo, { status: 201 });
   } catch (error) {
-    console.error("Error creating todo:", error);
     return NextResponse.json(
       { error: "Failed to create todo" },
       { status: 500 }

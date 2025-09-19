@@ -1,75 +1,49 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { NextResponse } from 'next/server';
 
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Mock data - in a real app, this would be in a database
+let todos = [
+  { 
+    id: '1', 
+    text: 'Welcome to DUIT!', 
+    completed: false, 
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
+];
+
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = params;
     const { text, completed } = await request.json();
-
-    // Check if todo exists
-    const existingTodo = await db.todo.findUnique({
-      where: { id },
-    });
-
-    if (!existingTodo) {
-      return NextResponse.json(
-        { error: "Todo not found" },
-        { status: 404 }
-      );
+    const todoIndex = todos.findIndex(todo => todo.id === params.id);
+    
+    if (todoIndex === -1) {
+      return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
     }
-
-    // Update todo
-    const updatedTodo = await db.todo.update({
-      where: { id },
-      data: {
-        ...(text !== undefined && { text: text.trim() }),
-        ...(completed !== undefined && { completed }),
-      },
-    });
-
-    return NextResponse.json(updatedTodo);
+    
+    todos[todoIndex] = {
+      ...todos[todoIndex],
+      text: text || todos[todoIndex].text,
+      completed: completed !== undefined ? completed : todos[todoIndex].completed,
+      updatedAt: new Date().toISOString()
+    };
+    
+    return NextResponse.json(todos[todoIndex]);
   } catch (error) {
-    console.error("Error updating todo:", error);
-    return NextResponse.json(
-      { error: "Failed to update todo" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update todo' }, { status: 500 });
   }
 }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const { id } = params;
-
-    // Check if todo exists
-    const existingTodo = await db.todo.findUnique({
-      where: { id },
-    });
-
-    if (!existingTodo) {
-      return NextResponse.json(
-        { error: "Todo not found" },
-        { status: 404 }
-      );
+    const todoIndex = todos.findIndex(todo => todo.id === params.id);
+    
+    if (todoIndex === -1) {
+      return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
     }
-
-    // Delete todo
-    await db.todo.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({ message: "Todo deleted successfully" });
+    
+    todos.splice(todoIndex, 1);
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Error deleting todo:", error);
-    return NextResponse.json(
-      { error: "Failed to delete todo" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete todo' }, { status: 500 });
   }
 }
