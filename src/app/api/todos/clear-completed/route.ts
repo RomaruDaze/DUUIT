@@ -1,21 +1,16 @@
-import { NextResponse } from 'next/server';
-
-// Mock data - in a real app, this would be in a database
-let todos = [
-  { 
-    id: '1', 
-    text: 'Welcome to DUIT!', 
-    completed: false, 
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  }
-];
+import { NextResponse } from "next/server";
+import { todos, clearCompleted } from "@/lib/mock-data";
 
 export async function POST() {
   try {
-    todos = todos.filter(todo => !todo.completed);
-    return NextResponse.json({ success: true, count: todos.length });
+    const beforeCount = todos.length;
+    clearCompleted();
+    const afterCount = todos.length;
+    return NextResponse.json({ 
+      success: true, 
+      deleted: beforeCount - afterCount 
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to clear completed todos' }, { status: 500 });
+    return NextResponse.json({ error: "Failed to clear completed todos" }, { status: 500 });
   }
 }

@@ -1,15 +1,5 @@
 import { NextResponse } from "next/server";
-
-// Mock data for testing - this will work without database
-let todos = [
-  {
-    id: "1",
-    text: "Welcome to DUIT!",
-    completed: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { todos, addTodo } from "@/lib/mock-data";
 
 export async function GET() {
   return NextResponse.json(todos);
@@ -25,7 +15,7 @@ export async function POST(request: Request) {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    todos.push(newTodo);
+    addTodo(newTodo);
     return NextResponse.json(newTodo, { status: 201 });
   } catch (error) {
     return NextResponse.json(
