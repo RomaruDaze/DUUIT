@@ -13,45 +13,122 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Trash2, Edit, Plus, Filter, CheckCircle, Circle } from "lucide-react";
+import { Trash2, Edit, Plus, Filter, LogOut, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import InstallPrompt from '@/components/InstallPrompt';
-
-interface Todo {
-  id: string;
-  text: string;
-  completed: boolean;
-  createdAt: Date;
-}
+import InstallPrompt from "@/components/InstallPrompt";
+import { useAuth } from "@/contexts/AuthContext";
+import LoginForm from "@/components/LoginForm";
+import { TodoService, Todo } from "@/lib/todoService";
 
 export default function TodoList() {
+  const { user, loading, logout } = useAuth();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [newTodo, setNewTodo] = useState("");
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
   const [editText, setEditText] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const { toast } = useToast();
+  const [todoService, setTodoService] = useState<TodoService | null>(null);
 
-  // Load todos from API on mount
+  // Initialize todo service when user logs in
   useEffect(() => {
-    fetchTodos();
-  }, []);
+    if (user) {
+      const service = new TodoService(user.uid);
+      setTodoService(service);
 
-  const fetchTodos = async () => {
-    try {
-      const response = await fetch("/api/todos");
-      if (response.ok) {
-        const data = await response.json();
-        setTodos(
-          data.map((todo: any) => ({
-            ...todo,
-            createdAt: new Date(todo.createdAt),
-          }))
-        );
+      // Listen to todos changes
+      const unsubscribe = service.onTodosChange(setTodos);
+
+      return () => unsubscribe();
+    }
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background p-4 flex items-center justify-center">
+        <LoginForm />
+      </div>
+    );
+  }
+
+  // Todo functions using the service
+  const addTodo = async (text: string) => {
+    if (todoService && text.trim()) {
+      try {
+        await todoService.addTodo(text);
+        setNewTodo("");
+        toast({
+          title: "Success",
+          description: "Todo added successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add todo",
+          variant: "destructive",
+        });
       }
-    } catch (error) {
-      console.error("Error fetching todos:", error);
+    }
+  };
+
+  const toggleTodo = async (id: string, completed: boolean) => {
+    if (todoService) {
+      try {
+        await todoService.toggleTodo(id, completed);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to update todo",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const deleteTodo = async (id: string) => {
+    if (todoService) {
+      try {
+        await todoService.deleteTodo(id);
+        toast({
+          title: "Success",
+          description: "Todo deleted successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete todo",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const clearCompleted = async () => {
+    if (todoService) {
+      try {
+        await todoService.clearCompleted();
+        toast({
+          title: "Success",
+          description: "Completed todos cleared",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to clear completed todos",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -60,110 +137,13 @@ export default function TodoList() {
     return date.toLocaleDateString();
   };
 
-  const addTodo = async () => {
-    if (newTodo.trim() === "") {
-      toast({
-        title: "Error",
-        description: "Please enter a todo item",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/todos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: newTodo.trim() }),
-      });
-
-      if (response.ok) {
-        const newTodoItem = await response.json();
-        setTodos([newTodoItem, ...todos]);
-        setNewTodo("");
-        toast({
-          title: "Success",
-          description: "Todo added successfully",
-        });
-      } else {
-        throw new Error("Failed to add todo");
-      }
-    } catch (error) {
-      console.error("Error adding todo:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add todo",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleTodo = async (id: string) => {
-    try {
-      const todo = todos.find((t) => t.id === id);
-      if (!todo) return;
-
-      const response = await fetch(`/api/todos/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ completed: !todo.completed }),
-      });
-
-      if (response.ok) {
-        setTodos(
-          todos.map((todo) =>
-            todo.id === id ? { ...todo, completed: !todo.completed } : todo
-          )
-        );
-      } else {
-        throw new Error("Failed to update todo");
-      }
-    } catch (error) {
-      console.error("Error toggling todo:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update todo",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const deleteTodo = async (id: string) => {
-    try {
-      const response = await fetch(`/api/todos/${id}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setTodos(todos.filter((todo) => todo.id !== id));
-        toast({
-          title: "Success",
-          description: "Todo deleted successfully",
-        });
-      } else {
-        throw new Error("Failed to delete todo");
-      }
-    } catch (error) {
-      console.error("Error deleting todo:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete todo",
-        variant: "destructive",
-      });
-    }
-  };
-
   const startEdit = (todo: Todo) => {
     setEditingTodo(todo);
     setEditText(todo.text);
   };
 
   const saveEdit = async () => {
-    if (!editingTodo || editText.trim() === "") {
+    if (!editingTodo || !todoService || editText.trim() === "") {
       toast({
         title: "Error",
         description: "Please enter a todo item",
@@ -173,31 +153,13 @@ export default function TodoList() {
     }
 
     try {
-      const response = await fetch(`/api/todos/${editingTodo.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text: editText.trim() }),
+      await todoService.updateTodo(editingTodo.id, { text: editText.trim() });
+      setEditingTodo(null);
+      setEditText("");
+      toast({
+        title: "Success",
+        description: "Todo updated successfully",
       });
-
-      if (response.ok) {
-        setTodos(
-          todos.map((todo) =>
-            todo.id === editingTodo.id
-              ? { ...todo, text: editText.trim() }
-              : todo
-          )
-        );
-        setEditingTodo(null);
-        setEditText("");
-        toast({
-          title: "Success",
-          description: "Todo updated successfully",
-        });
-      } else {
-        throw new Error("Failed to update todo");
-      }
     } catch (error) {
       console.error("Error updating todo:", error);
       toast({
@@ -220,6 +182,20 @@ export default function TodoList() {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-md mx-auto space-y-6">
+        {/* User info and logout */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            <span className="text-sm text-muted-foreground">
+              {user.displayName || user.email}
+            </span>
+          </div>
+          <Button onClick={logout} variant="outline" size="sm">
+            <LogOut className="w-4 h-4 mr-2" />
+            Logout
+          </Button>
+        </div>
+
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold text-foreground">Todo List</h1>
@@ -237,10 +213,14 @@ export default function TodoList() {
                 placeholder="What needs to be done?"
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && addTodo()}
+                onKeyPress={(e) => e.key === "Enter" && addTodo(newTodo)}
                 className="flex-1"
               />
-              <Button onClick={addTodo} size="icon" className="shrink-0">
+              <Button
+                onClick={() => addTodo(newTodo)}
+                size="icon"
+                className="shrink-0"
+              >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -334,7 +314,9 @@ export default function TodoList() {
                   >
                     <Checkbox
                       checked={todo.completed}
-                      onCheckedChange={() => toggleTodo(todo.id)}
+                      onCheckedChange={() =>
+                        toggleTodo(todo.id, !todo.completed)
+                      }
                       className="shrink-0"
                     />
                     <div className="flex-1 min-w-0">
@@ -406,34 +388,7 @@ export default function TodoList() {
 
         {/* Clear Completed Button */}
         {completedCount > 0 && (
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={async () => {
-              try {
-                const response = await fetch("/api/todos/clear-completed", {
-                  method: "POST",
-                });
-
-                if (response.ok) {
-                  setTodos(todos.filter((todo) => !todo.completed));
-                  toast({
-                    title: "Success",
-                    description: "Completed todos cleared",
-                  });
-                } else {
-                  throw new Error("Failed to clear completed todos");
-                }
-              } catch (error) {
-                console.error("Error clearing completed todos:", error);
-                toast({
-                  title: "Error",
-                  description: "Failed to clear completed todos",
-                  variant: "destructive",
-                });
-              }
-            }}
-          >
+          <Button variant="outline" className="w-full" onClick={clearCompleted}>
             Clear Completed ({completedCount})
           </Button>
         )}
