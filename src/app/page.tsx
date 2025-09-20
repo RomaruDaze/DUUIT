@@ -255,7 +255,7 @@ export default function TodoList() {
             </CardContent>
           </Card>
           <Card className="text-center">
-            <CardContent className="p3">
+            <CardContent className="p-3">
               <div className="text-2xl font-bold text-blue-600">
                 {activeCount}
               </div>
