@@ -87,7 +87,35 @@ export class TodoService {
 
   // Toggle todo completion
   async toggleTodo(todoId: string, completed: boolean): Promise<void> {
-    await this.updateTodo(todoId, { completed });
+    const todoRef = this.getTodoRef(todoId);
+
+    // Get the current todo data first
+    const currentTodo = await this.getTodo(todoId);
+    if (!currentTodo) {
+      throw new Error("Todo not found");
+    }
+
+    // Update with all existing data plus the new completed status
+    await this.updateTodo(todoId, {
+      ...currentTodo,
+      completed,
+      updatedAt: new Date().toISOString(),
+    });
+  }
+
+  // Add a helper method to get a single todo
+  private async getTodo(todoId: string): Promise<Todo | null> {
+    const todoRef = this.getTodoRef(todoId);
+    return new Promise((resolve) => {
+      onValue(
+        todoRef,
+        (snapshot) => {
+          const data = snapshot.val();
+          resolve(data ? { ...data, id: todoId } : null);
+        },
+        { onlyOnce: true }
+      );
+    });
   }
 
   // Clear completed todos
