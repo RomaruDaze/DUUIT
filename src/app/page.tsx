@@ -18,7 +18,17 @@ import { useToast } from "@/hooks/use-toast";
 import InstallPrompt from "@/components/InstallPrompt";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginForm from "@/components/LoginForm";
-import { TodoService, Todo } from "@/lib/todoService";
+import { TodoService, Todo as FirebaseTodo } from "@/lib/todoService";
+
+// Create a UI-specific Todo interface
+interface Todo {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: Date;
+  updatedAt: string;
+  userId: string;
+}
 
 export default function TodoList() {
   const { user, loading, logout } = useAuth();
@@ -37,7 +47,16 @@ export default function TodoList() {
       setTodoService(service);
 
       // Listen to todos changes
-      const unsubscribe = service.onTodosChange(setTodos);
+      const unsubscribe = service.onTodosChange(
+        (firebaseTodos: FirebaseTodo[]) => {
+          // Convert Firebase todos to UI format
+          const convertedTodos = firebaseTodos.map((todo) => ({
+            ...todo,
+            createdAt: new Date(todo.createdAt),
+          }));
+          setTodos(convertedTodos);
+        }
+      );
 
       return () => unsubscribe();
     }
@@ -132,8 +151,8 @@ export default function TodoList() {
     }
   };
 
-  const formatDate = (dateString: string | Date) => {
-    const date = new Date(dateString);
+  // Update the formatDate function to handle the converted Date objects
+  const formatDate = (date: Date) => {
     return date.toLocaleDateString();
   };
 
@@ -236,7 +255,7 @@ export default function TodoList() {
             </CardContent>
           </Card>
           <Card className="text-center">
-            <CardContent className="p-3">
+            <CardContent className="p3">
               <div className="text-2xl font-bold text-blue-600">
                 {activeCount}
               </div>
