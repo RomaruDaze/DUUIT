@@ -217,7 +217,7 @@ export default function TodoList() {
 
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold text-foreground">Todo List</h1>
+          <h1 className="text-3xl font-bold text-foreground">Duuit List</h1>
           <p className="text-muted-foreground">Stay organized and productive</p>
         </div>
 
