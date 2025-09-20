@@ -411,6 +411,11 @@ export default function TodoList() {
             Clear Completed ({completedCount})
           </Button>
         )}
+
+        {/* Version Number */}
+        <div className="text-center">
+          <p className="text-xs text-muted-foreground">v1.0.0</p>
+        </div>
       </div>
       <InstallPrompt />
     </div>
